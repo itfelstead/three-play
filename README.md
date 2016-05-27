@@ -1,2 +1,8 @@
 # three-play
-area for playing with three.js
+
+Area for three.js experimentation.
+
+Requires: 
+	three.min.js.
+Run:
+ on web server (hook TODO)
