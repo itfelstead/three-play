@@ -1,3 +1,10 @@
+<!--
+	Scratch.html
+
+	This file is intended as a rough base for playing with Three.js.
+	It provides a standard-ish game loop and scene setup.
+-->
+
 <!DOCTYPE html>
 <html lang="en">
 	<head>
@@ -23,14 +30,176 @@
 		<div id="Scratch"></div>
 
 		<script src="js/three.min.js"></script>
+		<script src="js/thirdparty/threejs/orbitcontrols.js"></script>
 
 		<script>
-			var scratchVersion = 0.01;
-			console.log( "three-play scratch v" + scratchVersion + " starting..." );
 
-			// TODO
+			// ---------------
+
+			// Constants
+			const VERSION = 0.01;
+			const UPDATE_TIME_STEP = 33; 	// 33ms = approx 30 FPS
+
+			// Globals
+			var g_Scene;
+			var g_Camera;
+			var g_Renderer;
+
+			var g_Element; 	// not need to be global?
+			var g_Container;// not need to be global?
+
+			var g_MouseControls;
+
+			var g_Clock;
+			var g_Lag = 0; 	// used in game loop for fixed step update
+
+
+
+			// Main
+
+			console.log( "three-play scratch v" + VERSION + " starting..." );
+
+			initialise();
+
+			gameLoop(); 	// intial kickoff, subsequest calls via requestAnimationFrame()
 
 			console.log( "...three-play scratch complete." );
+
+			// ---------------
+
+
+			//
+			// Initialisation
+			//
+
+			function initialise()
+			{
+				setupBasicScene();
+
+				addScratchCamera();
+
+				addAmbientLight();
+
+				addMouseControls();
+
+				addAxisHelper();
+
+				setupGameLoop();
+
+				addEventListeners();
+			}
+
+			function setupGameLoop()
+			{
+				g_Clock = new THREE.Clock();
+
+				g_Lag = 0;
+			}
+
+			function setupBasicScene()
+			{
+				g_Renderer = new THREE.WebGLRenderer();
+				g_Element = g_Renderer.domElement;
+				g_Container = document.getElementById('Scratch');
+				g_Container.appendChild(g_Element);
+
+				g_Scene = new THREE.Scene();
+			}
+
+			function addScratchCamera()
+			{
+				g_Camera = new THREE.PerspectiveCamera(90, 1, 0.001, 700);
+        			g_Camera.position.set(-5, 2, -5);
+	        		g_Camera.lookAt( new THREE.Vector3(0,0,0) );
+		        	g_Scene.add(g_Camera);
+			}
+
+			function addMouseControls()
+			{
+        			g_MouseControls = new THREE.OrbitControls(g_Camera, g_Element);
+        			g_MouseControls.rotateUp(Math.PI / 4);
+	        		g_MouseControls.target.set(
+		          		g_Camera.position.x + 0.1,
+			            	g_Camera.position.y,
+				        g_Camera.position.z );
+				g_MouseControls.noZoom = true;
+				g_MouseControls.noPan = true;
+			}
+
+			function addAmbientLight()
+			{
+				var white = 0xA0A0A0;
+				g_Scene.add( new THREE.AmbientLight(white) );
+
+			}
+
+			function addEventListeners()
+			{
+				window.addEventListener('resize', handleResize, false);
+				setTimeout(handleResize, 1);
+			}
+
+
+			//
+			// Game Loop
+			//
+
+			// gameLoop()
+			// Standard game loop with a fixed update rate to keep
+			// things consistent, and a variable render rate to allow
+			// for differences in machine performance
+			//
+			function gameLoop()
+			{
+				var elapsedTime = g_Clock.getDelta();
+
+				g_Lag += elapsedTime;
+
+				// perform as many updates as we should do
+				// based on the time elapsed from last gameloop call
+				while( g_Lag >= UPDATE_TIME_STEP )
+				{
+					update();
+
+					g_Lag -= UPDATE_TIME_STEP;
+				}
+
+				render();
+
+				requestAnimationFrame(gameLoop);
+			}
+
+			function update()
+			{
+				// Note: The time elapsed is UPDATE_TIME_STEP as we update in fixed steps
+
+			}
+
+			function render( )
+			{
+				g_Renderer.render(g_Scene, g_Camera);
+			}
+
+			function handleResize()
+			{
+				var width = g_Container.offsetWidth;
+				var height = g_Container.offsetHeight;
+
+				g_Camera.aspect = width / height;
+			        g_Camera.updateProjectionMatrix();
+
+				g_Renderer.setSize(width, height);
+			}
+
+
+			//
+			// Debugging Functions
+			//
+
+			function addAxisHelper()
+			{
+				g_Scene.add( new THREE.AxisHelper( 50 ) );
+			}
 		</script>
 	</body>
 </html>
