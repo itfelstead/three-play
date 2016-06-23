@@ -23,11 +23,24 @@
 				right: 0;
 				bottom: 0;
 			}
+			#ScratchInset {
+				width: 200px;
+			        height: 200px;
+				background-color: #fff; /* or transparent; will show through only if renderer alpha: true */
+			        border: 1px solid black; /* or none; */
+				margin: 20px;
+			        padding: 0px;
+				position: absolute;
+		        	left: 0px;
+			    	bottom: 0px;
+			        z-index: 100;
+			}
 		</style>
 	</head>
 
 	<body>
 		<div id="Scratch"></div>
+		<div id="ScratchInset"></div>
 
 		<script src="thirdparty/threejs/three.min.js"></script>
 		<script src="thirdparty/threejs/orbitcontrols.js"></script>
@@ -45,8 +58,16 @@
 			var g_Camera;
 			var g_Renderer;
 
-			var g_Element; 	// not need to be global?
-			var g_Container;// not need to be global?
+			var g_Element;
+			var g_Container;
+
+			var CANVAS_WIDTH = 200;
+			var CANVAS_HEIGHT = 200;
+			var g_InsetScene;
+			var g_InsetRenderer;
+			var g_InsetElement;
+			var g_InsetContainer;
+			var g_InsetCamera;
 
 			var g_MouseControls;
 
@@ -84,6 +105,8 @@
 
 				addAxisHelper();
 
+				addInsetWindo();
+
 				setupGameLoop();
 
 				addEventListeners();
@@ -104,6 +127,24 @@
 				g_Container.appendChild(g_Element);
 
 				g_Scene = new THREE.Scene();
+			}
+
+			function addInsetWindow()
+			{
+				g_InsetContainer = document.getElementById('ScratchInset');
+
+				g_InsetRenderer = new THREE.WegGLRenderer();
+				g_InsetRenderer.setClearColor( 0xf0f0f0 , 1);
+				g_InsetRenderer.setSize( CANVAS_WIDTH, CANVAS_HEIGHT );
+				g_InsetContainer.appendChild( g_InsetRenderer.domElement );
+
+				g_InsetScene = new THREE.Scene();
+
+				g_InsetCamera = THREE.PerspectiveCamera( 50, CANVAS_WIDTH / CANVAS_HEIGHT, 1, 1000 );
+				g_InsetCamera.up = g_Camera.up;
+
+				g_InsetScene.add( new THREE.AxisHelper( 50 ) );
+
 			}
 
 			function addScratchCamera()
@@ -173,11 +214,13 @@
 			{
 				// Note: The time elapsed is UPDATE_TIME_STEP as we update in fixed steps
 
+				
 			}
 
 			function render( )
 			{
 				g_Renderer.render(g_Scene, g_Camera);
+				g_InsetRenderer.render(g_InsetScene, g_InsetCamera);
 			}
 
 			function handleResize()
