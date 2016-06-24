@@ -16,6 +16,7 @@
 				margin: 0px;
 				overflow: hidden;
 			}
+			/* Main Window */
 			#Scratch {
 				position: absolute;
 				top: 0;
@@ -23,24 +24,11 @@
 				right: 0;
 				bottom: 0;
 			}
-			#ScratchInset {
-				width: 200px;
-			        height: 200px;
-				background-color: #fff; /* or transparent; will show through only if renderer alpha: true */
-			        border: 1px solid black; /* or none; */
-				margin: 20px;
-			        padding: 0px;
-				position: absolute;
-		        	left: 0px;
-			    	bottom: 0px;
-			        z-index: 100;
-			}
 		</style>
 	</head>
 
 	<body>
 		<div id="Scratch"></div>
-		<div id="ScratchInset"></div>
 
 		<script src="thirdparty/threejs/three.min.js"></script>
 		<script src="thirdparty/threejs/orbitcontrols.js"></script>
@@ -49,32 +37,38 @@
 
 			// ---------------
 
-			// Constants
-			const VERSION = 0.01;
-			const UPDATE_TIME_STEP = 33; 	// 33ms = approx 30 FPS
+			const VERSION = 0.02;
 
-			// Globals
+			var g_MouseControls;
+
+			// Main Screen Globals
 			var g_Scene;
 			var g_Camera;
 			var g_Renderer;
-
 			var g_Element;
 			var g_Container;
 
-			var CANVAS_WIDTH = 200;
-			var CANVAS_HEIGHT = 200;
+			// Inset Screen Test Globals
+			// see addInsetWindow()
+			var g_InsetEnabled = true;
+			var INSET_DIV_NAME = "ScratchInset";
+			var INSET_CANVAS_WIDTH = 200;
+			var INSET_CANVAS_HEIGHT = 200;
+			var INSET_COLOUR = 0x4FABC9
+			var INSET_CAM_FOV =30 
+			var INSET_CAM_NEAR = 1;
+			var INSET_CAM_FAR = 1000;
 			var g_InsetScene;
 			var g_InsetRenderer;
 			var g_InsetElement;
 			var g_InsetContainer;
 			var g_InsetCamera;
 
-			var g_MouseControls;
 
+			// Game Loop Globals
+			const UPDATE_TIME_STEP = 0.033; // 33ms = approx 30 FPS
 			var g_Clock;
 			var g_Lag = 0; 	// used in game loop for fixed step update
-
-
 
 			// Main
 
@@ -105,7 +99,7 @@
 
 				addAxisHelper();
 
-				addInsetWindo();
+				addInsetWindow();
 
 				setupGameLoop();
 
@@ -129,18 +123,42 @@
 				g_Scene = new THREE.Scene();
 			}
 
+			// Example inset window showing different scene
+			//
 			function addInsetWindow()
 			{
-				g_InsetContainer = document.getElementById('ScratchInset');
+				if( !g_InsetEnabled )
+				{
+					return;
+				}
 
-				g_InsetRenderer = new THREE.WegGLRenderer();
-				g_InsetRenderer.setClearColor( 0xf0f0f0 , 1);
-				g_InsetRenderer.setSize( CANVAS_WIDTH, CANVAS_HEIGHT );
+
+				// Inset Window
+				var insetDiv = document.createElement( "div" );
+				insetDiv.id = INSET_DIV_NAME;
+				insetDiv.style.cssText ="width: 200px; height: 200px; left: 10px; bottom: 10px;" +
+							"background-color: #fff;" + /* or 'transparent;' */
+							"opacity: 0.5; " + /* affects whole window */
+							"border: none; " + /* or e.g. '2px solid black' */
+							"margin: 20px; padding: 0px; " +
+							"position: absolute; z-index: 100;";
+				document.body.appendChild( insetDiv );
+
+				g_InsetContainer = document.getElementById( INSET_DIV_NAME );
+
+				// use 'alpha' to allow transparent inset window
+				g_InsetRenderer = new THREE.WebGLRenderer( { alpha: true } );
+
+				g_InsetRenderer.setClearColor( INSET_COLOUR , 1);
+				g_InsetRenderer.setSize( INSET_CANVAS_WIDTH, INSET_CANVAS_HEIGHT );
 				g_InsetContainer.appendChild( g_InsetRenderer.domElement );
 
 				g_InsetScene = new THREE.Scene();
 
-				g_InsetCamera = THREE.PerspectiveCamera( 50, CANVAS_WIDTH / CANVAS_HEIGHT, 1, 1000 );
+				g_InsetCamera = new THREE.PerspectiveCamera( INSET_CAM_FOV, 
+										INSET_CANVAS_WIDTH / INSET_CANVAS_HEIGHT, 
+										INSET_CAM_NEAR, 
+										INSET_CAM_FAR );
 				g_InsetCamera.up = g_Camera.up;
 
 				g_InsetScene.add( new THREE.AxisHelper( 50 ) );
@@ -203,6 +221,8 @@
 					update();
 
 					g_Lag -= UPDATE_TIME_STEP;
+
+                                        //console.log( "update called, g_Lag now " + g_Lag );
 				}
 
 				render();
@@ -214,13 +234,20 @@
 			{
 				// Note: The time elapsed is UPDATE_TIME_STEP as we update in fixed steps
 
-				
+				if( g_InsetEnabled )
+				{
+					g_InsetCamera.position.copy( g_Camera.position );
+					g_InsetCamera.lookAt( g_InsetScene.position );
+				}
 			}
 
 			function render( )
 			{
 				g_Renderer.render(g_Scene, g_Camera);
-				g_InsetRenderer.render(g_InsetScene, g_InsetCamera);
+				if( g_InsetEnabled )
+				{
+					g_InsetRenderer.render(g_InsetScene, g_InsetCamera);
+				}
 			}
 
 			function handleResize()
@@ -246,3 +273,4 @@
 		</script>
 	</body>
 </html>
+	
